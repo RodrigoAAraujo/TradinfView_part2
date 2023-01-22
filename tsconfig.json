@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "outDir": "JsCompiled",
+        "esModuleInterop": true,
+        "module": "es6",
+        "baseUrl": "src",
+        "paths": {
+            "@/*": ["*"]
+        },
+        "moduleResolution": "Node"
+    },
+    "ts-node": {
+        "esm": true
+    }
+}

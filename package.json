@@ -1,0 +1,49 @@
+{
+  "name": "tradingmarket",
+  "description": "Trading analises and management backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "npx nodemon src/server.ts",
+    "start": "node dist/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RodrigoAAraujo/TradingMarket.git"
+  },
+  "author": "Rodrigo Antunes Araujo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RodrigoAAraujo/TradingMarket/issues"
+  },
+  "homepage": "https://github.com/RodrigoAAraujo/TradingMarket#readme",
+  "keywords": [
+    "market",
+    "trading",
+    "typescript",
+    "backend",
+    "express"
+  ],
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.15",
+    "@types/jsonwebtoken": "^9.0.1",
+    "@types/pg": "^8.6.6",
+    "nodemon": "^2.0.20",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.2.3",
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "http-status": "^1.6.2",
+    "joi": "^17.7.0",
+    "jsonwebtoken": "^9.0.0",
+    "pg": "^8.8.0"
+  }
+}
