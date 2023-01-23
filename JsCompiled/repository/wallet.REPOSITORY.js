@@ -34,35 +34,42 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import { DuplicityError } from "../errors/DuplicityError.js";
+import { NotAcceptableError } from "../errors/NotAcceptableError.js";
+import DBconnection from "../database/db.js";
 import { NotfoundError } from "../errors/NotFoundError.js";
-import { UnauthorizedError } from "../errors/UnauthorizedError.js";
-import userRepository from "../repository/user.REPOSITORY.js";
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import sessionRepository from "../repository/sessions.REPOSITORY.js";
-dotenv.config();
-function validateUserSignIn(user) {
+function insertWallet(user_id) {
     return __awaiter(this, void 0, void 0, function () {
-        var email, passCheck, err_1;
+        return __generator(this, function (_a) {
+            try {
+                DBconnection.query("INSERT INTO wallet (user_id) VALUES ($1)", [user_id]);
+            }
+            catch (err) {
+                throw err;
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+function checkWalletOwner(id, token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var session, wallet, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 3, , 4]);
-                    return [4 /*yield*/, userRepository.checkEmailExistence(user.email)];
+                    return [4 /*yield*/, DBconnection.query("SELECT user_id FROM sessions WHERE token=$1", [token])];
                 case 1:
-                    email = _a.sent();
-                    if (email.length === 0) {
-                        throw NotfoundError("Email not registered");
-                    }
-                    return [4 /*yield*/, userRepository.checkPassword(user)];
+                    session = (_a.sent()).rows[0];
+                    return [4 /*yield*/, DBconnection.query("SELECT user_id FROM wallet WHERE id=$1", [id])];
                 case 2:
-                    passCheck = _a.sent();
-                    if (!passCheck) {
-                        throw UnauthorizedError("Email or password incorrect");
+                    wallet = (_a.sent()).rows[0];
+                    if (wallet === undefined) {
+                        throw NotfoundError("Wallet not found");
                     }
-                    return [2 /*return*/, true];
+                    if (wallet.user_id === session.user_id) {
+                        return [2 /*return*/, true];
+                    }
+                    return [2 /*return*/, false];
                 case 3:
                     err_1 = _a.sent();
                     throw err_1;
@@ -71,62 +78,57 @@ function validateUserSignIn(user) {
         });
     });
 }
-function getCredentials(email) {
+function deleteWallet(id) {
     return __awaiter(this, void 0, void 0, function () {
-        var token, err_2;
+        return __generator(this, function (_a) {
+            try {
+                DBconnection.query("DELETE FROM wallet WHERE id=$1", [id]);
+            }
+            catch (err) {
+                throw err;
+            }
+            return [2 /*return*/];
+        });
+    });
+}
+function getMyWallets(token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var user_id, wallets;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    token = jwt.sign(email, process.env.JWT_SECRET);
-                    return [4 /*yield*/, sessionRepository.createSession(token, email)];
+                case 0: return [4 /*yield*/, DBconnection.query("SELECT user_id FROM sessions WHERE token=$1", [token])];
                 case 1:
-                    _a.sent();
-                    return [2 /*return*/, token];
+                    user_id = (_a.sent()).rows[0].user_id;
+                    return [4 /*yield*/, DBconnection.query("SELECT balance FROM wallet WHERE user_id=$1", [user_id])];
                 case 2:
-                    err_2 = _a.sent();
-                    throw err_2;
-                case 3: return [2 /*return*/];
+                    wallets = (_a.sent()).rows;
+                    return [2 /*return*/, wallets];
             }
         });
     });
 }
-function createUser(user) {
+function adjustBalance(wallet_id, amount) {
     return __awaiter(this, void 0, void 0, function () {
-        var doubleEmail, doubleUsername, encryptedPass, err_3;
+        var balance;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 4, , 5]);
-                    return [4 /*yield*/, userRepository.checkEmailExistence(user.email)];
+                case 0: return [4 /*yield*/, DBconnection.query("SELECT balance FROM wallet WHERE id=$1", [wallet_id])];
                 case 1:
-                    doubleEmail = _a.sent();
-                    if (doubleEmail.length > 0) {
-                        throw DuplicityError("Email already in use");
+                    balance = (_a.sent()).rows[0].balance;
+                    if (Number(balance) + amount < 0) {
+                        throw NotAcceptableError("Your balance can`t afford this movimentation");
                     }
-                    return [4 /*yield*/, userRepository.validateUsernameDuplicity(user.username)];
-                case 2:
-                    doubleUsername = _a.sent();
-                    if (doubleUsername.length > 0) {
-                        throw DuplicityError("Username already in use");
-                    }
-                    encryptedPass = bcrypt.hashSync(user.password, 12);
-                    user.password = encryptedPass;
-                    return [4 /*yield*/, userRepository.insertUser(user)];
-                case 3:
-                    _a.sent();
-                    return [3 /*break*/, 5];
-                case 4:
-                    err_3 = _a.sent();
-                    throw err_3;
-                case 5: return [2 /*return*/];
+                    DBconnection.query("UPDATE wallet SET balance=$1 WHERE id=$2", [Number(balance) + amount, wallet_id]);
+                    return [2 /*return*/];
             }
         });
     });
 }
-var userServices = {
-    validateUserSignIn: validateUserSignIn,
-    getCredentials: getCredentials,
-    createUser: createUser
+var walletRepository = {
+    insertWallet: insertWallet,
+    deleteWallet: deleteWallet,
+    checkWalletOwner: checkWalletOwner,
+    adjustBalance: adjustBalance,
+    getMyWallets: getMyWallets
 };
-export default userServices;
+export default walletRepository;

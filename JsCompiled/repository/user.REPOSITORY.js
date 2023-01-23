@@ -34,9 +34,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import DBconnection from "@/database/db";
+import DBconnection from "../database/db.js";
 import bcrypt from 'bcrypt';
-export function insertUser(user) {
+function insertUser(user) {
     return __awaiter(this, void 0, void 0, function () {
         return __generator(this, function (_a) {
             try {
@@ -52,17 +52,17 @@ export function insertUser(user) {
         });
     });
 }
-export function checkPassword(user) {
+function checkPassword(user) {
     return __awaiter(this, void 0, void 0, function () {
-        var EncryptedPass, passCheck, err_1;
+        var password, passCheck, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
                     return [4 /*yield*/, DBconnection.query("SELECT password FROM users WHERE email=$1", [user.email])];
                 case 1:
-                    EncryptedPass = _a.sent();
-                    passCheck = bcrypt.compareSync(user.password, EncryptedPass.rows[0]);
+                    password = (_a.sent()).rows[0].password;
+                    passCheck = bcrypt.compareSync(user.password, password);
                     return [2 /*return*/, passCheck];
                 case 2:
                     err_1 = _a.sent();
@@ -72,7 +72,7 @@ export function checkPassword(user) {
         });
     });
 }
-export function checkEmailExistence(email) {
+function checkEmailExistence(email) {
     return __awaiter(this, void 0, void 0, function () {
         var doubleEmail, err_2;
         return __generator(this, function (_a) {
@@ -91,14 +91,14 @@ export function checkEmailExistence(email) {
         });
     });
 }
-export function validateUsernameDuplicity(username) {
+function validateUsernameDuplicity(username) {
     return __awaiter(this, void 0, void 0, function () {
         var doubleUsername, err_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
                     _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, DBconnection.query("SELECT email FROM users WHERE email = $1", [username])];
+                    return [4 /*yield*/, DBconnection.query("SELECT email FROM users WHERE username = $1", [username])];
                 case 1:
                     doubleUsername = _a.sent();
                     return [2 /*return*/, doubleUsername.rows];
@@ -110,31 +110,10 @@ export function validateUsernameDuplicity(username) {
         });
     });
 }
-export function createSession(token, email) {
-    return __awaiter(this, void 0, void 0, function () {
-        var userId, err_4;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, DBconnection.query("SELECT id FROM users where email=$1", [email])];
-                case 1:
-                    userId = _a.sent();
-                    DBconnection.query("INSERT INTO session (user_id, token) VALUES ($1, $2)", [token, userId.rows[0]]);
-                    return [3 /*break*/, 3];
-                case 2:
-                    err_4 = _a.sent();
-                    throw err_4;
-                case 3: return [2 /*return*/];
-            }
-        });
-    });
-}
 var userRepository = {
     insertUser: insertUser,
     checkEmailExistence: checkEmailExistence,
     checkPassword: checkPassword,
-    createSession: createSession,
     validateUsernameDuplicity: validateUsernameDuplicity
 };
 export default userRepository;

@@ -34,70 +34,87 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import userServices from "../services/user.SERVICES.js";
-import httpStatus from "http-status";
-export function sendCredentials(req, res) {
+import { UnauthorizedError } from "../errors/UnauthorizedError.js";
+import sessionRepository from "../repository/sessions.REPOSITORY.js";
+import walletRepository from "../repository/wallet.REPOSITORY.js";
+function deleteWallet(id, token) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, credentials, err_1;
+        var validOwner, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
-                    _a.label = 1;
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, walletRepository.checkWalletOwner(id, token)];
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, userServices.validateUserSignIn(user)];
+                    validOwner = _a.sent();
+                    if (!validOwner) {
+                        throw UnauthorizedError("Wallet is not from this owner");
+                    }
+                    return [4 /*yield*/, walletRepository.deleteWallet(id)];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, userServices.getCredentials(user.email)];
+                    return [3 /*break*/, 4];
                 case 3:
-                    credentials = _a.sent();
-                    res.status(httpStatus.OK).send({
-                        token: credentials
-                    });
-                    return [2 /*return*/];
-                case 4:
                     err_1 = _a.sent();
-                    if (err_1.name === "NotFoundError") {
-                        res.status(httpStatus.NOT_FOUND).send(err_1);
-                        return [2 /*return*/];
-                    }
-                    if (err_1.name === "UnauthorizedError") {
-                        res.status(httpStatus.CONFLICT).send(err_1);
-                        return [2 /*return*/];
-                    }
-                    res.send(err_1);
-                    return [2 /*return*/];
-                case 5: return [2 /*return*/];
-            }
-        });
-    });
-}
-export function insertUser(req, res) {
-    return __awaiter(this, void 0, void 0, function () {
-        var user, err_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    user = req.body;
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, userServices.createUser(user)];
-                case 2:
-                    _a.sent();
-                    res.sendStatus(httpStatus.CREATED);
-                    return [2 /*return*/];
-                case 3:
-                    err_2 = _a.sent();
-                    if (err_2.name === "DuplicityError") {
-                        res.status(httpStatus.CONFLICT).send(err_2);
-                        return [2 /*return*/];
-                    }
-                    res.send(err_2);
-                    return [2 /*return*/];
+                    throw err_1;
                 case 4: return [2 /*return*/];
             }
         });
     });
 }
+function insertWallet(token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var user_id, err_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, sessionRepository.getUserId(token)];
+                case 1:
+                    user_id = _a.sent();
+                    if (user_id === null) {
+                        throw UnauthorizedError("Token Invalid");
+                    }
+                    return [4 /*yield*/, walletRepository.insertWallet(user_id)];
+                case 2:
+                    _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_2 = _a.sent();
+                    throw err_2;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+function adjustwalletBalance(wallet_id, amount, token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var validOwner, err_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 3, , 4]);
+                    return [4 /*yield*/, walletRepository.checkWalletOwner(wallet_id, token)];
+                case 1:
+                    validOwner = _a.sent();
+                    if (!validOwner) {
+                        throw UnauthorizedError("Wallet is not from this owner");
+                    }
+                    return [4 /*yield*/, walletRepository.adjustBalance(wallet_id, amount)];
+                case 2:
+                    _a.sent();
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_3 = _a.sent();
+                    throw err_3;
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+var walletServices = {
+    deleteWallet: deleteWallet,
+    insertWallet: insertWallet,
+    adjustwalletBalance: adjustwalletBalance
+};
+export default walletServices;

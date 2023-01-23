@@ -1,13 +1,15 @@
-import httpStatus from "http-status";
 export default function validateBody(schema) {
     return validate(schema);
 }
 function validate(schema) {
     return function (req, res, next) {
-        var error = schema.validate({ abortEarly: false }).error;
+        var error = schema.validate(req.body, { abortEarly: false }).error;
         if (error) {
-            res.sendStatus(httpStatus.BAD_REQUEST).send({ message: error.details.map(function (o) { return o.message; }) });
+            res.status(400).send({ message: error.details.map(function (o) { return o.message; }) });
+            return;
         }
-        next();
+        else {
+            next();
+        }
     };
 }

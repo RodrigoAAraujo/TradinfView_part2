@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "npx nodemon src/server.ts",
-    "start": "node dist/server.js"
+    "start": "npx tsc node JsCompiled/server.js",
+    "build": "npm install"
   },
   "repository": {
     "type": "git",

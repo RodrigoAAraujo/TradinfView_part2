@@ -34,70 +34,74 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import userServices from "../services/user.SERVICES.js";
-import httpStatus from "http-status";
-export function sendCredentials(req, res) {
+import DBconnection from "../database/db.js";
+function createSession(token, email) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, credentials, err_1;
+        var id, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
-                    _a.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, DBconnection.query("SELECT id FROM users where email=$1", [email])];
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, userServices.validateUserSignIn(user)];
+                    id = (_a.sent()).rows[0].id;
+                    DBconnection.query("INSERT INTO sessions (user_id, token) VALUES ($1, $2)", [id, token]);
+                    return [3 /*break*/, 3];
                 case 2:
-                    _a.sent();
-                    return [4 /*yield*/, userServices.getCredentials(user.email)];
-                case 3:
-                    credentials = _a.sent();
-                    res.status(httpStatus.OK).send({
-                        token: credentials
-                    });
-                    return [2 /*return*/];
-                case 4:
                     err_1 = _a.sent();
-                    if (err_1.name === "NotFoundError") {
-                        res.status(httpStatus.NOT_FOUND).send(err_1);
-                        return [2 /*return*/];
-                    }
-                    if (err_1.name === "UnauthorizedError") {
-                        res.status(httpStatus.CONFLICT).send(err_1);
-                        return [2 /*return*/];
-                    }
-                    res.send(err_1);
-                    return [2 /*return*/];
-                case 5: return [2 /*return*/];
+                    throw err_1;
+                case 3: return [2 /*return*/];
             }
         });
     });
 }
-export function insertUser(req, res) {
+function validateSession(tokenReceiving) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, err_2;
+        var token, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
-                    _a.label = 1;
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, DBconnection.query("SELECT token FROM sessions WHERE token=$1 AND active='TRUE'", [tokenReceiving])];
                 case 1:
-                    _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, userServices.createUser(user)];
-                case 2:
-                    _a.sent();
-                    res.sendStatus(httpStatus.CREATED);
-                    return [2 /*return*/];
-                case 3:
-                    err_2 = _a.sent();
-                    if (err_2.name === "DuplicityError") {
-                        res.status(httpStatus.CONFLICT).send(err_2);
-                        return [2 /*return*/];
+                    token = (_a.sent()).rows[0].token;
+                    if (token) {
+                        return [2 /*return*/, true];
                     }
-                    res.send(err_2);
-                    return [2 /*return*/];
-                case 4: return [2 /*return*/];
+                    else {
+                        return [2 /*return*/, false];
+                    }
+                    return [3 /*break*/, 3];
+                case 2:
+                    err_2 = _a.sent();
+                    throw err_2;
+                case 3: return [2 /*return*/];
             }
         });
     });
 }
+function getUserId(token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var user_id, err_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 2, , 3]);
+                    return [4 /*yield*/, DBconnection.query("SELECT user_id FROM sessions WHERE token=$1", [token])];
+                case 1:
+                    user_id = (_a.sent()).rows[0].user_id;
+                    return [2 /*return*/, user_id];
+                case 2:
+                    err_3 = _a.sent();
+                    throw err_3;
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
+var sessionRepository = {
+    createSession: createSession,
+    validateSession: validateSession,
+    getUserId: getUserId
+};
+export default sessionRepository;

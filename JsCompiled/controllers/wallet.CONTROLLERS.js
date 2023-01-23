@@ -34,67 +34,130 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import userServices from "../services/user.SERVICES.js";
+import walletRepository from "../repository/wallet.REPOSITORY.js";
+import walletServices from "../services/wallet.SERVICES.js";
 import httpStatus from "http-status";
-export function sendCredentials(req, res) {
+export function createWallet(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, credentials, err_1;
+        var authorization, token, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
+                    authorization = req.headers.authorization;
+                    token = authorization.replace("Bearer ", "");
                     _a.label = 1;
                 case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, userServices.validateUserSignIn(user)];
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, walletServices.insertWallet(token)];
                 case 2:
                     _a.sent();
-                    return [4 /*yield*/, userServices.getCredentials(user.email)];
-                case 3:
-                    credentials = _a.sent();
-                    res.status(httpStatus.OK).send({
-                        token: credentials
-                    });
+                    res.sendStatus(httpStatus.CREATED);
                     return [2 /*return*/];
-                case 4:
+                case 3:
                     err_1 = _a.sent();
-                    if (err_1.name === "NotFoundError") {
-                        res.status(httpStatus.NOT_FOUND).send(err_1);
-                        return [2 /*return*/];
-                    }
                     if (err_1.name === "UnauthorizedError") {
                         res.status(httpStatus.CONFLICT).send(err_1);
                         return [2 /*return*/];
                     }
                     res.send(err_1);
                     return [2 /*return*/];
-                case 5: return [2 /*return*/];
+                case 4: return [2 /*return*/];
             }
         });
     });
 }
-export function insertUser(req, res) {
+export function deleteWallet(req, res) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, err_2;
+        var id, authorization, token, err_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
+                    id = req.params.id;
+                    authorization = req.header("Authorization");
+                    token = authorization.replace("Bearer ", "");
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, userServices.createUser(user)];
+                    return [4 /*yield*/, walletServices.deleteWallet(Number(id), token)];
                 case 2:
                     _a.sent();
-                    res.sendStatus(httpStatus.CREATED);
+                    res.sendStatus(httpStatus.OK);
                     return [2 /*return*/];
                 case 3:
                     err_2 = _a.sent();
-                    if (err_2.name === "DuplicityError") {
+                    if (err_2.name === "NotFoundError") {
+                        res.status(httpStatus.NOT_FOUND).send(err_2);
+                        return [2 /*return*/];
+                    }
+                    if (err_2.name === "UnauthorizedError") {
                         res.status(httpStatus.CONFLICT).send(err_2);
                         return [2 /*return*/];
                     }
                     res.send(err_2);
+                    return [2 /*return*/];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+export function getMywallets(req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var authorization, token, wallets, err_3;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    authorization = req.header("Authorization");
+                    token = authorization.replace("Bearer ", "");
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, walletRepository.getMyWallets(token)];
+                case 2:
+                    wallets = _a.sent();
+                    res.status(httpStatus.OK).send(wallets);
+                    return [2 /*return*/];
+                case 3:
+                    err_3 = _a.sent();
+                    res.send(err_3);
+                    return [2 /*return*/];
+                case 4: return [2 /*return*/];
+            }
+        });
+    });
+}
+export function adjustWallet(req, res) {
+    return __awaiter(this, void 0, void 0, function () {
+        var authorization, amount, wallet_id, token, err_4;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    authorization = req.headers.authorization;
+                    amount = req.body.amount;
+                    wallet_id = req.params.wallet_id;
+                    token = authorization.replace("Bearer ", "");
+                    _a.label = 1;
+                case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, walletServices.adjustwalletBalance(Number(wallet_id), Number(amount), token)];
+                case 2:
+                    _a.sent();
+                    res.sendStatus(httpStatus.OK);
+                    return [2 /*return*/];
+                case 3:
+                    err_4 = _a.sent();
+                    if (err_4.name === "NotFoundError") {
+                        res.status(httpStatus.NOT_FOUND).send(err_4);
+                        return [2 /*return*/];
+                    }
+                    if (err_4.name === "UnauthorizedError") {
+                        res.status(httpStatus.CONFLICT).send(err_4);
+                        return [2 /*return*/];
+                    }
+                    if (err_4.name === "NotAcceptableError") {
+                        res.status(httpStatus.NOT_ACCEPTABLE).send(err_4);
+                        return [2 /*return*/];
+                    }
+                    res.send(err_4);
                     return [2 /*return*/];
                 case 4: return [2 /*return*/];
             }

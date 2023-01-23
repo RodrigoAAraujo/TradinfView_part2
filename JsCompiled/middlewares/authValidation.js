@@ -34,67 +34,39 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-import userServices from "../services/user.SERVICES.js";
+import sessionRepository from "../repository/sessions.REPOSITORY.js";
 import httpStatus from "http-status";
-export function sendCredentials(req, res) {
+export function authValidation(req, res, next) {
     return __awaiter(this, void 0, void 0, function () {
-        var user, credentials, err_1;
+        var authorization, token, valid, err_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    user = req.body;
-                    _a.label = 1;
-                case 1:
-                    _a.trys.push([1, 4, , 5]);
-                    return [4 /*yield*/, userServices.validateUserSignIn(user)];
-                case 2:
-                    _a.sent();
-                    return [4 /*yield*/, userServices.getCredentials(user.email)];
-                case 3:
-                    credentials = _a.sent();
-                    res.status(httpStatus.OK).send({
-                        token: credentials
-                    });
-                    return [2 /*return*/];
-                case 4:
-                    err_1 = _a.sent();
-                    if (err_1.name === "NotFoundError") {
-                        res.status(httpStatus.NOT_FOUND).send(err_1);
+                    authorization = req.headers.authorization;
+                    if (!authorization) {
+                        res.status(httpStatus.BAD_REQUEST).send("No authorization header");
                         return [2 /*return*/];
                     }
-                    if (err_1.name === "UnauthorizedError") {
-                        res.status(httpStatus.CONFLICT).send(err_1);
+                    if (!authorization.includes("Bearer ")) {
+                        res.status(httpStatus.BAD_REQUEST).send("Header authorization in wrong format");
                         return [2 /*return*/];
                     }
-                    res.send(err_1);
-                    return [2 /*return*/];
-                case 5: return [2 /*return*/];
-            }
-        });
-    });
-}
-export function insertUser(req, res) {
-    return __awaiter(this, void 0, void 0, function () {
-        var user, err_2;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    user = req.body;
+                    token = authorization.replace("Bearer ", "");
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, userServices.createUser(user)];
+                    return [4 /*yield*/, sessionRepository.validateSession(token)];
                 case 2:
-                    _a.sent();
-                    res.sendStatus(httpStatus.CREATED);
-                    return [2 /*return*/];
-                case 3:
-                    err_2 = _a.sent();
-                    if (err_2.name === "DuplicityError") {
-                        res.status(httpStatus.CONFLICT).send(err_2);
+                    valid = _a.sent();
+                    if (!valid) {
+                        res.status(httpStatus.UNAUTHORIZED).send("Wrong credentials");
                         return [2 /*return*/];
                     }
-                    res.send(err_2);
+                    next();
+                    return [3 /*break*/, 4];
+                case 3:
+                    err_1 = _a.sent();
+                    res.send(err_1);
                     return [2 /*return*/];
                 case 4: return [2 /*return*/];
             }

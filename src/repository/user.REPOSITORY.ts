@@ -1,9 +1,8 @@
-import DBconnection from "@/database/db";
-import { UnauthorizedError } from "@/errors/UnauthorizedError";
-import { SigninType, SignupType } from "@/protocols";
+import DBconnection from "../database/db.js";
+import { SigninType, SignupType } from "../protocols/user.PROTOCOLS.js";
 import bcrypt from 'bcrypt'
 
-export async function insertUser(user: SignupType){
+async function insertUser(user: SignupType){
     try{
 
         if(user.image_url === null){
@@ -20,11 +19,11 @@ export async function insertUser(user: SignupType){
     }
 }
 
-export async function checkPassword(user: SigninType) {
+async function checkPassword(user: SigninType) : Promise<Boolean> {
     try{
-        const EncryptedPass = await DBconnection.query(`SELECT password FROM users WHERE email=$1`, [user.email])
+        const {password} = (await DBconnection.query(`SELECT password FROM users WHERE email=$1`, [user.email])).rows[0]  as {password: string}
 
-        const passCheck = bcrypt.compareSync(user.password, EncryptedPass.rows[0])
+        const passCheck = bcrypt.compareSync(user.password, password)
 
         return passCheck
 
@@ -33,7 +32,7 @@ export async function checkPassword(user: SigninType) {
     }
 }
 
-export async function checkEmailExistence(email: string){
+async function checkEmailExistence(email: string) : Promise<string[]>{
 
     try{
         const doubleEmail = await DBconnection.query("SELECT email FROM users WHERE email = $1", [email])
@@ -44,10 +43,10 @@ export async function checkEmailExistence(email: string){
     }
 }
 
-export async function validateUsernameDuplicity(username: string){
+async function validateUsernameDuplicity(username: string) : Promise<string[]>{
 
     try{
-        const doubleUsername = await DBconnection.query("SELECT email FROM users WHERE email = $1", [username])
+        const doubleUsername = await DBconnection.query("SELECT email FROM users WHERE username = $1", [username])
     
         return doubleUsername.rows
     }catch(err){
@@ -55,26 +54,10 @@ export async function validateUsernameDuplicity(username: string){
     }
 }
 
-export async function createSession(token: string, email: string){
-
-    try{
-        const userId = await DBconnection.query(`SELECT id FROM users where email=$1`, [email])
-
-        DBconnection.query(`INSERT INTO session (user_id, token) VALUES ($1, $2)`,
-        [token, userId.rows[0]])
-        
-    }catch(err){
-        throw err
-    }
-   
-
-}
-
 const userRepository = {
     insertUser,
     checkEmailExistence,
     checkPassword,
-    createSession,
     validateUsernameDuplicity
 }
 
