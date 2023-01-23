@@ -6,12 +6,15 @@ This API works in a slight glance with marketing and finances. Trying to emulate
 ## Routes
 
 USERS 
+
     POST("signin")
         body --> models.user.Signin
+        
     POST("signup")
         body --> models.user.Signup
 
 WALLET
+
     GET("me")
 
     POST("add")
