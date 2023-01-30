@@ -1,19 +1,8 @@
-import pkg from "pg";
 import dotenv from "dotenv";
-import { ConnectionConfig } from "pg";
+import { PrismaClient } from "@prisma/client";
 
 dotenv.config()
 
-const {Pool} = pkg
+const DBConnection = new PrismaClient()
 
-const DBconfig: ConnectionConfig = {
-    connectionString: process.env.DB_URL,
-}
-
-if(process.env.MODE === "prod"){
-    DBconfig.ssl = true
-}
-
-const DBconnection = new Pool(DBconfig)
-
-export default DBconnection
+export default DBConnection

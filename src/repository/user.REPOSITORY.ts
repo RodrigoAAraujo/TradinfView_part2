@@ -1,57 +1,47 @@
 import DBconnection from "../database/db.js";
 import { SigninType, SignupType } from "../protocols/user.PROTOCOLS.js";
 import bcrypt from 'bcrypt'
+import { users } from "@prisma/client";
 
-async function insertUser(user: SignupType){
-    try{
+async function insertUser(user: SignupType) {
+    await DBconnection.users.create({
+        data: user
+    })
 
-        if(user.image_url === null){
-            DBconnection.query("INSERT INTO users (username, email, password, image_url) VALUES ($1, $2, $3)", 
-            [user.username, user.email, user.password])
+}
+
+async function checkPassword(user: SigninType): Promise<Boolean> {
+
+    const session = await DBconnection.users.findFirst({
+        where: {
+            email: user.email
         }
-    
-        
-        DBconnection.query("INSERT INTO users (username, email, password, image_url) VALUES ($1, $2, $3, $4)",
-        [user.username, user.email, user.password, user.image_url])
+    })
 
-    }catch(err){
-        throw err
-    }
+    const passCheck = bcrypt.compareSync(user.password, session.password)
+
+    return passCheck
+
 }
 
-async function checkPassword(user: SigninType) : Promise<Boolean> {
-    try{
-        const {password} = (await DBconnection.query(`SELECT password FROM users WHERE email=$1`, [user.email])).rows[0]  as {password: string}
+async function checkEmailExistence(email: string): Promise<users[]> {
+    const doubleEmail = await DBconnection.users.findMany({
+        where:{
+            email
+        }
+    })
 
-        const passCheck = bcrypt.compareSync(user.password, password)
-
-        return passCheck
-
-    }catch(err){
-        throw err
-    }
+    return doubleEmail
 }
 
-async function checkEmailExistence(email: string) : Promise<string[]>{
+async function validateUsernameDuplicity(username: string): Promise<users[]> {
+    const doubleUsername = await DBconnection.users.findMany({
+        where:{
+            username
+        }
+    })
 
-    try{
-        const doubleEmail = await DBconnection.query("SELECT email FROM users WHERE email = $1", [email])
-    
-        return doubleEmail.rows
-    }catch(err){
-        throw err
-    }
-}
-
-async function validateUsernameDuplicity(username: string) : Promise<string[]>{
-
-    try{
-        const doubleUsername = await DBconnection.query("SELECT email FROM users WHERE username = $1", [username])
-    
-        return doubleUsername.rows
-    }catch(err){
-        throw err
-    }
+    return doubleUsername
 }
 
 const userRepository = {

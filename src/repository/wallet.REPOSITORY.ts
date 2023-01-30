@@ -1,64 +1,74 @@
 import { NotAcceptableError } from "../errors/NotAcceptableError.js"
 import DBconnection from "../database/db.js"
 import { NotfoundError } from "../errors/NotFoundError.js"
+import { wallet } from "@prisma/client"
 
-async function insertWallet(user_id: number){
-    try{
-        DBconnection.query("INSERT INTO wallet (user_id) VALUES ($1)", [user_id])
-    }catch(err){
-        throw err
-    }
- 
-}
-
-async function checkWalletOwner(id: number, token: string): Promise<Boolean>{
-    try{
-        const session = (await DBconnection.query("SELECT user_id FROM sessions WHERE token=$1", [token])).rows[0] as {user_id: number}
-
-        const wallet = (await DBconnection.query("SELECT user_id FROM wallet WHERE id=$1", [id])).rows[0] as {user_id: number | null}
-
-        if(wallet === undefined){
-            throw NotfoundError("Wallet not found")
+async function insertWallet(user_id: number) {
+    await DBconnection.wallet.create({
+        data: {
+            user_id
         }
-
-        if(wallet.user_id === session.user_id){
-            return true
-        }
-        return false
-
-    }catch(err){
-        throw err
-    }
+    })
 }
 
-async function deleteWallet(id:number){
-    try{
-        DBconnection.query("DELETE FROM wallet WHERE id=$1", [id])
-    }catch(err){
-        throw err
+async function checkWalletOwner(id: number, token: string): Promise<Boolean> {
+    const session = await DBconnection.sessions.findFirst({
+        where: {token}
+    })
+
+    const wallet = await DBconnection.wallet.findFirst({
+        where: {id}
+    })
+
+
+    if (!wallet) {
+        throw NotfoundError("Wallet not found")
     }
- 
+
+    if (wallet.user_id === session.user_id) {
+        return true
+    }
+    return false
+
 }
 
-async function getMyWallets(token: string): Promise<{balance: number}[]>{
+async function deleteWallet(id: number) {
 
-    const {user_id} = (await DBconnection.query("SELECT user_id FROM sessions WHERE token=$1", [token])).rows[0] as {user_id: number | null}
+    await DBconnection.wallet.delete({
+        where:{id}
+    })
+}
 
-    const wallets = (await DBconnection.query("SELECT balance FROM wallet WHERE user_id=$1", [user_id])).rows
+async function getMyWallets(token: string): Promise<wallet[]> {
+
+    const session = await DBconnection.sessions.findFirst({
+        where: {token}
+    })
+
+    const wallets = await DBconnection.wallet.findMany({
+        where: {user_id: session.user_id}
+    })
 
     return wallets
 }
 
-async function adjustBalance(wallet_id: number, amount: number){
+async function adjustBalance(wallet_id: number, amount: number) {
 
-    const {balance} = (await DBconnection.query("SELECT balance FROM wallet WHERE id=$1", [wallet_id])).rows[0] as {balance: number}
+    const wallet = await DBconnection.wallet.findFirst({
+        where: {id: wallet_id}
+    })
+ 
 
-    if(Number(balance) + amount < 0){
+    if (Number(wallet.balance) + amount < 0) {
         throw NotAcceptableError("Your balance can`t afford this movimentation")
     }
 
-    DBconnection.query(`UPDATE wallet SET balance=$1 WHERE id=$2`, [Number(balance)+amount, wallet_id])
-
+    await DBconnection.wallet.update({
+        where:{id: wallet_id},
+        data:{
+            balance: Number(wallet.balance) + amount
+        }
+    })
 }
 
 const walletRepository = {
